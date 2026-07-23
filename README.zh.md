@@ -142,6 +142,24 @@ cd docker-learn-system
 python3 learn.py
 ```
 
+### Web UI 模式（推荐）
+
+```bash
+pip install streamlit plotly
+streamlit run web_ui/app.py
+```
+
+打开 **http://localhost:8501**，包含：
+- 💬 对话界面
+- 📊 Plotly 交互式图表
+- 📚 知识图谱浏览
+- 📝 互动测验
+- 🎯 掌握度热力图 + 遗忘曲线
+- 📈 Mermaid 图表画廊（8 种）
+- 🔍 Go 源码分析
+- 📖 交互式书籍
+- 📓 笔记搜索和导出
+
 ### 入门命令
 
 ```text
@@ -224,15 +242,16 @@ python3 learn.py
 | **语言** | Python 3.10+ (纯原生，零外部依赖) |
 | **知识图谱** | 文件版（引擎支持切换 Neo4j） |
 | **记忆系统** | 文件系统 + JSON（支持向量数据库） |
-| **可视化** | Mermaid 图表 |
+| **可视化** | Mermaid 图表 + Plotly 交互式图表 |
 | **CLI** | 原生终端，无框架依赖 |
+| **Web UI** | Streamlit + Plotly |
 | **部署** | Docker Compose (Neo4j + ChromaDB + App) |
 
 ---
 
 ## 🎯 实现状态
 
-全部 7 个阶段已完成：
+全部 8 个阶段已完成：
 
 | 阶段 | 名称 | 状态 |
 |------|------|------|
@@ -244,6 +263,7 @@ python3 learn.py
 | P5 | 长期记忆 + 上下文恢复 | ✅ |
 | P6 | 人格系统 + 自适应路径 | ✅ |
 | P7 | 仪表盘 + 学习闭环 + UX | ✅ |
+| P8 | Go AST 解析 + Web UI 图表 | ✅ |
 
 ---
 
