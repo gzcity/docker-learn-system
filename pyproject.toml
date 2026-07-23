@@ -36,10 +36,10 @@ docker-learn = "learn:main"
 docker-learn-web = "web_ui.app:main"
 
 [project.urls]
-Homepage = "https://github.com/yourusername/docker-learn-system"
-Documentation = "https://github.com/yourusername/docker-learn-system/blob/main/README.md"
-Repository = "https://github.com/yourusername/docker-learn-system"
-Issues = "https://github.com/yourusername/docker-learn-system/issues"
+Homepage = "https://github.com/gzcity/docker-learn-system"
+Documentation = "https://github.com/gzcity/docker-learn-system/blob/main/README.md"
+Repository = "https://github.com/gzcity/docker-learn-system"
+Issues = "https://github.com/gzcity/docker-learn-system/issues"
 
 [tool.setuptools]
 packages = ["engine"]

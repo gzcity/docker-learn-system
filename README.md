@@ -188,7 +188,7 @@ Learning Docker source code has a steep learning curve:
 
 ```bash
 # Clone the repo
-git clone https://github.com/yourusername/docker-learn-system.git
+git clone https://github.com/gzcity/docker-learn-system.git
 cd docker-learn-system
 
 # Run it — no dependencies to install (pure Python)
