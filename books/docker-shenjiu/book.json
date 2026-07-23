@@ -2,12 +2,12 @@
   "id": "docker-shenjiu",
   "title": "Docker 源码深究",
   "author": "Docker 学习系统",
-  "version": "1.0",
+  "version": "1.1",
   "description": "从源码角度深入理解 Docker 的核心组件、架构设计和实现原理。",
-  "total_chapters": 6,
+  "total_chapters": 7,
   "difficulty": "intermediate",
   "prerequisites": ["容器 (Container)", "Go 基础"],
-  "tags": ["docker", "源码", "容器", "containerd", "runc"],
+  "tags": ["docker", "源码", "容器", "containerd", "runc", "OCI"],
   "chapters": [
     {
       "id": "01",
@@ -25,29 +25,36 @@
     },
     {
       "id": "03",
+      "title": "容器运行时深度剖析",
+      "file": "chapters/03-container-runtime.md",
+      "concepts": ["容器运行时 (Container Runtime)", "containerd", "runc", "shim"],
+      "estimated_minutes": 35
+    },
+    {
+      "id": "04",
       "title": "镜像与层管理",
-      "file": "chapters/03-image-and-layer.md",
+      "file": "chapters/04-image-and-layer.md",
       "concepts": ["镜像 (Image)", "层 (Layer)", "存储驱动"],
       "estimated_minutes": 25
     },
     {
-      "id": "04",
+      "id": "05",
       "title": "容器运行时：containerd 与 runc",
-      "file": "chapters/04-containerd-runc.md",
+      "file": "chapters/05-containerd-runc.md",
       "concepts": ["containerd", "runc", "shim"],
       "estimated_minutes": 35
     },
     {
-      "id": "05",
+      "id": "06",
       "title": "Docker 网络实现",
-      "file": "chapters/05-networking.md",
+      "file": "chapters/06-networking.md",
       "concepts": ["网络模型"],
       "estimated_minutes": 30
     },
     {
-      "id": "06",
+      "id": "07",
       "title": "Docker 构建系统",
-      "file": "chapters/06-build-system.md",
+      "file": "chapters/07-build-system.md",
       "concepts": ["镜像构建流程", "镜像拉取流程"],
       "estimated_minutes": 25
     }

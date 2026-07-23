@@ -5,10 +5,12 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
-[![Code lines](https://img.shields.io/badge/code-6300%2B%20Python-blueviolet)](.)
+[![Code lines](https://img.shields.io/badge/code-7000%2B%20Python-blueviolet)](.)
 [![Agents](https://img.shields.io/badge/agents-8-orange)](./agents)
 [![Concepts](https://img.shields.io/badge/concepts-16-ff69b4)](./docker-knowledge)
+[![Questions](https://img.shields.io/badge/questions-30-9cf)](./questions)
 [![Web UI](https://img.shields.io/badge/Web%20UI-Streamlit-FF4B4B)](./web_ui)
+[![Stars](https://img.shields.io/github/stars/gzcity/docker-learn-system?style=social)](https://github.com/gzcity/docker-learn-system)
 
 ---
 
@@ -18,17 +20,17 @@
 
 ## 📸 Demo
 
+<details>
+<summary>📺 CLI Demo (click to expand)</summary>
+
 ```text
 $ python3 learn.py
 
 🐳 Docker 源码学习系统 v1.0
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-📚 16个核心概念 | 14道题目 | 8种人格
+📚 16个核心概念 | 30道题目 | 8种人格
 🎯 学习系统已就绪，开始你的 Docker 源码之旅！
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-💡 输入「引导」查看新手教程，或直接开始学习！
 
 > 什么是容器运行时？
 
@@ -43,31 +45,18 @@ $ python3 learn.py
   • containerd — 高级运行时，管理镜像传输和容器生命周期
   • shim    — 连接 containerd 和 runc 的桥梁
 
-代码路径：
-  docker/daemon/ → containerd API → containerd →
-  runc create/start
-
-关联概念：
-  → cgroups (资源隔离)
-  → namespaces (视图隔离)
-  → 镜像层 (容器文件系统)
-
 > 画一下容器运行时的架构图
 
 📊 容器运行时架构图
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-```mermaid
 graph TD
     DockerCLI["docker CLI"] --> DockerDaemon["dockerd"]
     DockerDaemon --> Containerd["containerd"]
     Containerd --> Shim["containerd-shim"]
     Shim --> Runc["runc"]
     Runc --> Container["容器进程"]
-    Runc --> Cgroups["cgroups"]
-    Runc --> Namespaces["namespaces"]
     ...
-```
 
 > 考考我关于 cgroups 的题
 
@@ -82,8 +71,10 @@ B. 进程视图隔离
 C. 资源限制和监控
 D. 文件系统隔离
 
-> 你的答案？
+✅ 正确！cgroups 的核心作用是资源限制和监控。
 ```
+
+</details>
 
 ---
 
@@ -110,17 +101,17 @@ Learning Docker source code has a steep learning curve:
 | Feature | Description |
 |---------|-------------|
 | 💬 **Conversational Tutor** | Ask anything about Docker internals. The system retrieves knowledge graph context, checks your mastery level, and adapts the explanation. |
-| 📝 **Quiz Engine** | 8 question types, 5 scoring methods. Difficulty adapts to your mastery. Questions are linked to knowledge graph concepts. |
+| 📝 **Quiz Engine** | 8 question types (choice, true/false, fill-blank, code analysis, etc.), 5 scoring methods. Difficulty adapts to your mastery. |
 | 🔄 **Spaced Repetition** | SM-2 algorithm with forgetting curve modeling. Automatically schedules reviews when you're about to forget. |
-| 🎭 **8 Teaching Personas** | Socratic, Professor, Practitioner, Storyteller, Coach, Debugger, Minimalist, Devil's Advocate. Switch with a single command. |
-| 📊 **Visualization Engine** | 8 diagram types: architecture, call chain, class diagram, data flow, learning path, knowledge graph, progress, heatmap. All Mermaid. |
-| 🔬 **Deep Research** | Generates structured research reports (7 sections) with code references, architecture analysis, design patterns, and concept relationships. |
-| 📚 **Knowledge Base** | Structured Docker knowledge with 4 categories: basic concepts, source architecture, design decisions, practical tips. |
-| 📖 **Interactive Books** | Read chapters with code links, concept annotations, and auto-generated quizzes at chapter end. |
+| 🎭 **8 Teaching Personas** | Socratic, Professor, Practitioner, Storyteller, Coach, Debugger, Minimalist, Devil's Advocate. |
+| 📊 **Visualization Engine** | 8 diagram types rendered as images: architecture, call chain, class diagram, data flow, learning path, knowledge graph, progress, heatmap. |
+| 🔍 **Go AST Parsing** | Real Docker source code analysis — fetch from GitHub, parse structs/interfaces/functions, generate source reports. |
+| 🔬 **Deep Research** | Generates structured research reports with code references, architecture analysis, design patterns, and concept relationships. |
+| 📚 **Knowledge Base + Books** | Structured Docker knowledge + interactive books with progress tracking. |
 | 📓 **Note System** | Notes auto-link to concepts. Supports semantic search and Markdown export. |
 | 🧠 **Long-term Memory** | Cross-session context recovery. Remembers what you learned, weak spots, misconceptions, and preferences. |
-| 🎯 **Adaptive Learning Path** | 4 stages (Beginner → Advanced → Proficient → Expert), BFS prerequisite planning, adaptive adjustments. |
-| 🖥️ **Dashboard** | Learning overview, mastery distribution, due reviews, 4 learning loops, stats, export, milestones. |
+| 🎯 **Adaptive Learning Path** | 4 stages (Beginner → Advanced → Proficient → Expert), BFS prerequisite planning. |
+| 🖥️ **Web UI** | Streamlit interface with Plotly charts, Mermaid diagrams, persona switcher, mastery dashboard. |
 | ❌ **Misconception Detection** | DeepTutor-inspired Expectation-Misconception framework. Catches misunderstandings and corrects them in real-time. |
 
 ---
@@ -145,9 +136,9 @@ Learning Docker source code has a steep learning curve:
 │    │  │  Agent   │ │  Agent   │ │  Agent   │ │  Agent   │   │  │
 │    │  └────┬─────┘ └────┬─────┘ └────┬─────┘ └────┬─────┘   │  │
 │    │  ┌────┴─────┐ ┌────┴─────┐ ┌────┴─────┐              │  │
-│    │  │  Coach   │ │ Librarian│ │  Scribe  │              │  │  │
-│    │  │  Agent   │ │  Agent   │ │  Agent   │              │  │  │
-│    │  └──────────┘ └──────────┘ └──────────┘              │  │  │
+│    │  │  Coach   │ │ Librarian│ │  Scribe  │              │  │
+│    │  │  Agent   │ │  Agent   │ │  Agent   │              │  │
+│    │  └──────────┘ └──────────┘ └──────────┘              │  │
 │    └───────────────────────────┬──────────────────────────┘  │  │
 │                               │                              │  │
 │    ┌───────────────────────────┼──────────────────────────┐  │  │
@@ -179,44 +170,31 @@ Learning Docker source code has a steep learning curve:
 
 ## 🚀 Quick Start
 
-### Prerequisites
-
-- Python 3.10+
-- pip
-
 ### CLI Mode (Zero Dependencies)
 
 ```bash
-# Clone the repo
 git clone https://github.com/gzcity/docker-learn-system.git
 cd docker-learn-system
-
-# Run it — no dependencies to install (pure Python)
 python3 learn.py
 ```
 
-That's it. The CLI uses pure Python with no external dependencies. Knowledge graph, quiz engine, mastery model — all built from scratch.
-
-### 🌐 Web UI Mode (Recommended for New Users)
+### Web UI Mode (Recommended)
 
 ```bash
-# Install Streamlit
-pip install streamlit
-
-# Launch the web interface
+pip install streamlit plotly
 streamlit run web_ui/app.py
 ```
 
-Then open **http://localhost:8501** in your browser. The Web UI includes:
-- 💬 **Chat interface** — talk to the tutor like ChatGPT
-- 📊 **Dashboard** — learning overview with charts
-- 📚 **Knowledge Graph** — browse all 16 concepts with mastery levels
-- 📝 **Quiz** — interactive quiz with scoring and feedback
-- 🎯 **Mastery Heatmap** — bar charts and retention curves
-- 🔬 **Deep Research** — generate research reports
-- 📖 **Books** — read interactive chapters
-- 📓 **Notes** — create, search, and export notes
-- 🎭 **Persona Switcher** — change teaching style from the sidebar
+Then open **http://localhost:8501**. Includes:
+- 💬 Chat interface
+- 📊 Dashboard with Plotly charts
+- 📚 Knowledge graph browser
+- 📝 Interactive quiz
+- 🎯 Mastery heatmap with retention curves
+- 📈 Mermaid diagram gallery (8 types)
+- 🔍 Go source code analysis
+- 📖 Interactive books
+- 📓 Notes with search/export
 
 ### First Steps
 
@@ -235,71 +213,34 @@ Then open **http://localhost:8501** in your browser. The Web UI includes:
 
 ## 🎭 Teaching Personas
 
-```
-┌───────────────┬──────────────────────────────────────┐
-│   Persona     │  Style                               │
-├───────────────┼──────────────────────────────────────┤
-│ Socrates      │  Questions back, makes you think     │
-│ Professor     │  Structured, rigorous, systematic    │
-│ Practitioner  │  Code-first, hands-on                │
-│ Storyteller   │  Analogies, narratives, intuitions   │
-│ Coach         │  Goal-oriented, motivational         │
-│ Debugger      │  Problem-first, reverse thinking     │
-│ Minimalist    │  Shortest path to the answer         │
-│ Devil's Advocate │ Challenges assumptions            │
-└───────────────┴──────────────────────────────────────┘
-```
+| Persona | Style |
+|---------|-------|
+| Socrates | Questions back, makes you think |
+| Professor | Structured, rigorous, systematic |
+| Practitioner | Code-first, hands-on |
+| Storyteller | Analogies, narratives, intuitions |
+| Coach | Goal-oriented, motivational |
+| Debugger | Problem-first, reverse thinking |
+| Minimalist | Shortest path to the answer |
+| Devil's Advocate | Challenges assumptions |
 
-Switch anytime during a session:
-```text
-> 用教练风格
-> 苏格拉底模式
-> 这次用极简者的方式
-```
+Switch anytime: `> 用教练风格` or `> 苏格拉底模式`
 
 ---
 
 ## 🧩 Knowledge Graph (16 Core Concepts)
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│                    Docker Knowledge Graph                     │
-├──────────────────────────────────────────────────────────────┤
-│                                                              │
-│  ContainerRuntime ──prerequisite──> cgroups                  │
-│  ContainerRuntime ──prerequisite──> namespaces               │
-│  ContainerRuntime ──related──> ImageLayer                    │
-│  ImageLayer ──prerequisite──> StorageDriver                  │
-│  ImageLayer ──related──> Dockerfile                          │
-│  NetworkModel ──prerequisite──> BridgeNetwork                │
-│  NetworkModel ──prerequisite──> OverlayNetwork               │
-│  DockerArchitecture ──calls──> ContainerRuntime              │
-│  DockerArchitecture ──calls──> ImageManagement               │
-│  ... (16 concepts, 20+ misconceptions)                       │
-│                                                              │
-└──────────────────────────────────────────────────────────────┘
-```
-
-Each concept is pre-loaded with:
+Each concept includes:
 - **Definition** & **difficulty rating**
 - **Prerequisites** & **related concepts**
 - **Source code references** (file paths)
 - **Common misconceptions** (DeepTutor Expectation-Misconception framework)
 
+Concepts: Container, Image, Layer, Container Runtime, Dockerd, Client, API Types, Runtime, Network, Volume, Dockerfile, Registry, Reference, Cgroups, Namespaces, UnionFS
+
 ---
 
 ## 🧠 Spaced Repetition (SM-2)
-
-The mastery engine uses a modified SM-2 algorithm:
-
-```
-Mastery Record for "Container Runtime":
-  Level:        0.65 (65%)
-  Last Review:  2 days ago
-  Attempts:     5 (3/5 correct)
-  Next Review:  Tomorrow (due!)
-  Forgetting Curve: Dropping — review now!
-```
 
 - **Forgetting curve**: mastery decays exponentially over time
 - **Association propagation**: improving one concept boosts related ones by 30%
@@ -313,38 +254,26 @@ Mastery Record for "Container Runtime":
 docker-learn-system/
 ├── README.md              ← This file
 ├── README.zh.md           ← Chinese version
-├── ARCHITECTURE.md        ← Technical architecture deep-dive
-├── ROADMAP.md             ← Implementation roadmap (P0-P7)
-├── OVERVIEW.md            ← File structure overview
-│
-├── learn.py               ← CLI entry point (37 lines!)
-├── engine/                ← Core engine (6,300+ lines)
-│   ├── orchestrator.py    ← Main orchestrator (1,800+ lines)
-│   ├── knowledge_graph.py ← Knowledge graph engine (415 lines)
-│   ├── knowledge_base.py  ← Knowledge base + books + notes (333 lines)
-│   ├── quiz_engine.py     ← Quiz & scoring engine (698 lines)
-│   ├── mastery_engine.py  ← SM-2 mastery engine (601 lines)
-│   ├── visualization_engine.py ← 8 diagram types (620 lines)
-│   ├── research_engine.py ← Deep research reports (400 lines)
-│   ├── memory_engine.py   ← Long-term memory (750 lines)
-│   ├── persona_engine.py  ← 8 personas + learning path (950 lines)
-│   └── dashboard_engine.py ← Dashboard + flows + UX (512 lines)
-│
-├── agents/                ← Agent role definitions (5 agents)
+├── learn.py               ← CLI entry point
+├── engine/                ← Core engine (7,000+ lines)
+│   ├── orchestrator.py    ← Main orchestrator
+│   ├── knowledge_graph.py ← Knowledge graph engine
+│   ├── knowledge_base.py  ← Knowledge base + books + notes
+│   ├── quiz_engine.py     ← Quiz & scoring engine
+│   ├── mastery_engine.py  ← SM-2 mastery engine
+│   ├── visualization_engine.py ← 8 diagram types
+│   ├── research_engine.py ← Deep research reports
+│   ├── go_ast_parser.py   ← Go source code parser
+│   ├── memory_engine.py   ← Long-term memory
+│   ├── persona_engine.py  ← 8 personas + learning path
+│   └── dashboard_engine.py ← Dashboard + flows + UX
+├── agents/                ← Agent role definitions
 ├── docker-knowledge/      ← Knowledge graph seed data
-│   └── CONCEPTS.md        ← 16 concepts with misconceptions
-├── questions/             ← Question bank
-│   └── EXAMPLES.md        ← 14 questions, 8 types, 5 difficulties
+├── questions/             ← Question bank (30 questions)
 ├── personas/              ← Persona configurations
-│   └── ALL_PERSONAS.md    ← 8 persona presets
-├── books/                 ← Interactive book content
-│   └── docker-shenjiu/    ← "Deep Dive into Docker" book
-├── notes/                 ← User notes (generated at runtime)
-├── memory/                ← Learning memory (generated at runtime)
+├── books/                 ← Interactive book (7 chapters)
+├── web_ui/                ← Streamlit Web UI
 └── deploy/                ← Docker deployment
-    ├── docker-compose.yml ← Full stack (Neo4j + ChromaDB + App)
-    ├── Dockerfile         ← Container build
-    └── Makefile           ← Build & deploy commands
 ```
 
 ---
@@ -353,17 +282,16 @@ docker-learn-system/
 
 | Metric | Value |
 |--------|-------|
-| Python code lines | ~6,300 |
-| Engine modules | 10 |
+| Python code lines | ~7,000 |
+| Engine modules | 11 |
 | Agent roles | 8 |
 | Core concepts | 16 |
 | Common misconceptions | 20 |
-| Questions | 14 (8 types, 5 difficulties) |
+| Questions | 30 (8 types, 5 difficulties) |
 | Teaching personas | 8 |
 | Visualization types | 8 |
-| Quiz scoring methods | 5 |
-| Learning loops | 4 |
-| Docker deployment files | 7 |
+| Docker source categories | 15 |
+| Book chapters | 7 |
 
 ---
 
@@ -374,15 +302,13 @@ docker-learn-system/
 | **Language** | Python 3.10+ (pure, no external deps) |
 | **Knowledge Graph** | File-based (engine supports Neo4j switch) |
 | **Memory** | File system + JSON (vector DB ready) |
-| **Visualization** | Mermaid diagrams |
+| **Visualization** | Mermaid diagrams + Plotly charts |
 | **CLI** | Native terminal (no framework) |
 | **Deployment** | Docker Compose (Neo4j + ChromaDB + App) |
 
 ---
 
 ## 🎯 Implementation Status
-
-All 7 phases completed:
 
 | Phase | Name | Status |
 |-------|------|--------|
@@ -394,6 +320,7 @@ All 7 phases completed:
 | P5 | Long-term Memory + Context Recovery | ✅ |
 | P6 | Persona System + Adaptive Learning Path | ✅ |
 | P7 | Dashboard + Learning Loops + UX | ✅ |
+| P8 | Go AST Parser + Web UI Charts | ✅ |
 
 ---
 
@@ -402,13 +329,12 @@ All 7 phases completed:
 This is a project that could go many directions. Contributions welcome!
 
 **Ideas to explore:**
-- 🌐 **Web UI** (Streamlit / React frontend) — would 3x the stars
-- 🔬 **Real Go AST parsing** — connect to actual Docker source code
+- 🌐 **React frontend** — replace Streamlit with a modern UI
 - 🗄️ **Neo4j backend** — for large-scale knowledge graphs
 - 🌍 **English content** — translate concepts and questions
-- 🧪 **More questions** — expand the question bank
-- 🎨 **More visualizations** — add new diagram types
-- 📱 **API mode** — expose as a service
+- 🧪 **More questions** — expand the question bank (target 100+)
+- 📱 **API mode** — expose as a REST/gRPC service
+- 🔌 **VS Code extension** — learn Docker in your editor
 
 ---
 

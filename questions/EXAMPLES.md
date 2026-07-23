@@ -353,3 +353,313 @@ func (daemon *Daemon) containerCreate(params types.ContainerCreateConfig) (conta
 1. `newContainer` 创建容器对象并分配 ID，后续网络和存储配置需要容器 ID 作为标识。
 2. 这里存在资源泄漏风险。理想情况下应该使用 defer 或错误处理来回滚。实际源码中使用了清理机制。
 3. 没有运行。返回后容器处于 Created 状态。启动需要单独调用 start 接口。这是"创建"和"启动"分离的设计。
+
+---
+
+## 新增扩展题目
+
+### Q015: cgroups 资源限制
+
+**类型**：选择题（单选）
+**概念**：`cgroups` → `容器运行时`
+**难度**：0.4
+**前置知识**：`容器`
+
+**题目**：
+cgroups 在 Docker 中主要用于实现什么功能？
+
+A. 限制容器可以使用的 CPU、内存等资源
+B. 提供容器的网络通信能力
+C. 管理容器的文件系统挂载
+D. 加密容器间的数据传输
+
+**正确答案**：A
+**解析**：cgroups（Control Groups）是 Linux 内核功能，用于限制、记录和隔离进程组的资源使用（CPU、内存、磁盘 I/O 等）。Docker 利用 cgroups 实现容器的资源限制。
+
+---
+
+### Q016: namespaces 隔离
+
+**类型**：判断题
+**概念**：`namespaces` → `容器运行时`
+**难度**：0.3
+**前置知识**：`容器`
+
+**题目**：
+Linux namespaces 可以隔离容器的进程视图、网络栈和文件系统挂载点。
+
+**正确答案**：正确
+**解析**：Linux namespaces 提供多种隔离：PID namespace（进程视图）、Network namespace（网络栈）、Mount namespace（文件系统挂载）、UTS namespace（主机名）、IPC namespace（进程间通信）、User namespace（用户权限）。
+
+---
+
+### Q017: UnionFS 联合文件系统
+
+**类型**：选择题（单选）
+**概念**：`UnionFS` → `层`
+**难度**：0.5
+**前置知识**：`镜像`
+
+**题目**：
+UnionFS（联合文件系统）在 Docker 中的主要作用是什么？
+
+A. 将多个目录合并为一个统一视图，实现分层存储
+B. 提供容器间的网络通信
+C. 加密镜像层内容
+D. 管理容器的生命周期
+
+**正确答案**：A
+**解析**：UnionFS 将多个目录堆叠在一起，形成一个统一的文件系统视图。在 Docker 中，镜像的每一层是一个只读目录，UnionFS 将它们叠加，容器运行时在最上层添加可写层。
+
+---
+
+### Q018: Dockerfile 构建
+
+**类型**：填空题
+**概念**：`Dockerfile` → `构建`
+**难度**：0.4
+**前置知识**：`镜像`
+
+**题目**：
+Dockerfile 中用于指定基础镜像的关键字是 `____`，用于执行 shell 命令的关键字是 `____`。
+
+**正确答案**：FROM, RUN
+**解析**：FROM 指令指定基础镜像，必须是 Dockerfile 的第一条指令。RUN 指令在构建时执行命令并创建新的镜像层，常用于安装软件包。
+
+---
+
+### Q019: 镜像仓库 Registry
+
+**类型**：选择题（单选）
+**概念**：`镜像仓库` → `registry`
+**难度**：0.5
+**前置知识**：`镜像`
+
+**题目**：
+Docker Hub 和私有 Registry 的关系是什么？
+
+A. Docker Hub 是公共的镜像仓库，私有 Registry 是企业内部的镜像存储
+B. Docker Hub 是私有 Registry 的一种
+C. 私有 Registry 必须与 Docker Hub 同步
+D. 两者没有关系
+
+**正确答案**：A
+**解析**：Docker Hub 是 Docker 官方的公共镜像仓库，任何人都可以拉取公开镜像。私有 Registry 是企业或组织内部部署的镜像存储服务，用于存放私有镜像。
+
+---
+
+### Q020: 网络模型
+
+**类型**：多选题
+**概念**：`网络模型` → `bridge`
+**难度**：0.6
+**前置知识**：`容器`
+
+**题目**：
+Docker 支持以下哪些网络驱动？（多选）
+
+A. bridge
+B. host
+C. overlay
+D. nat
+
+**正确答案**：A, B, C
+**解析**：Docker 支持多种网络驱动：bridge（默认，容器通过虚拟网桥通信）、host（与宿主机共享网络栈）、overlay（跨主机容器通信）、macvlan（为容器分配 MAC 地址）、none（无网络）。
+
+---
+
+### Q021: Volume 存储卷
+
+**类型**：选择题（单选）
+**概念**：`Volume` → `存储卷`
+**难度**：0.4
+**前置知识**：`容器`
+
+**题目**：
+Docker Volume 与 bind mount 的主要区别是什么？
+
+A. Volume 由 Docker 管理，bind mount 直接绑定宿主机路径
+B. Volume 更快
+C. Volume 只能在 Linux 上使用
+D. bind mount 更安全
+
+**正确答案**：A
+**解析**：Volume 由 Docker 创建和管理，存储在 Docker 的数据目录中。bind mount 直接绑定宿主机的任意路径。Volume 更易备份和移植，不依赖宿主机目录结构。
+
+---
+
+### Q022: dockerd 守护进程
+
+**类型**：判断题
+**概念**：`dockerd` → `Docker 守护进程`
+**难度**：0.3
+**前置知识**：无
+
+**题目**：
+dockerd 是 Docker 的客户端命令行工具。
+
+**正确答案**：错误
+**解析**：dockerd 是 Docker 的后台守护进程（daemon），负责管理容器、镜像、网络和存储。Docker CLI（docker 命令）才是客户端工具，通过 REST API 与 dockerd 通信。
+
+---
+
+### Q023: containerd 运行时
+
+**类型**：选择题（单选）
+**概念**：`containerd` → `容器运行时`
+**难度**：0.6
+**前置知识**：`容器运行时`
+
+**题目**：
+containerd 在 Docker 架构中扮演什么角色？
+
+A. 高级运行时，管理镜像传输和容器生命周期
+B. 低级运行时，直接创建容器进程
+C. 网络代理
+D. 存储驱动
+
+**正确答案**：A
+**解析**：containerd 是高级容器运行时，负责镜像管理、容器生命周期管理、网络配置等。runc 是低级运行时，直接执行容器进程。Docker 架构：dockerd → containerd → shim → runc。
+
+---
+
+### Q024: runc OCI 实现
+
+**类型**：填空题
+**概念**：`runc` → `OCI`
+**难度**：0.5
+**前置知识**：`容器运行时`
+
+**题目**：
+runc 是 ____（组织）制定的 ____（标准）的参考实现。
+
+**正确答案**：OCI, OCI Runtime Specification
+**解析**：OCI（Open Container Initiative）是一个开放治理结构，OCI Runtime Specification 定义了容器运行时的配置和生命周期。runc 是该标准的 Go 语言参考实现。
+
+---
+
+### Q025: 容器创建流程
+
+**类型**：排序题
+**概念**：`容器创建` → `生命周期`
+**难度**：0.7
+**前置知识**：`容器运行时`, `dockerd`
+
+**题目**：
+请将以下容器创建步骤按正确顺序排列：
+
+A. runc 创建容器进程
+B. docker CLI 发送创建请求
+C. containerd 创建 shim 进程
+D. dockerd 验证参数并准备配置
+E. shim 调用 runc
+
+**正确顺序**：B → D → C → E → A
+**解析**：1) CLI 发送请求到 dockerd；2) dockerd 验证参数并准备容器配置；3) containerd 创建 shim 进程；4) shim 调用 runc；5) runc 创建实际的容器进程（调用 clone() + exec()）。
+
+---
+
+### Q026: shim 进程作用
+
+**类型**：简答题
+**概念**：`shim` → `containerd`
+**难度**：0.7
+**前置知识**：`containerd`, `runc`
+
+**题目**：
+为什么 containerd 需要一个 shim 进程来管理容器？直接调用 runc 不行吗？
+
+**参考答案**：
+shim 进程的核心作用是解耦 containerd 和容器进程。当 runc 创建容器后，runc 进程会退出，此时容器进程变成了孤儿进程。shim 作为中间层：1) 接管容器进程的 stdin/stdout/stderr；2) 等待容器退出并报告 exit code；3) 使 containerd 可以热升级而不中断容器（因为 shim 保持运行）。如果 containerd 直接管理，runc 退出后 containerd 无法追踪容器状态。
+
+---
+
+### Q027: 镜像构建缓存
+
+**类型**：选择题（单选）
+**概念**：`构建缓存` → `Dockerfile`
+**难度**：0.5
+**前置知识**：`Dockerfile`
+
+**题目**：
+Dockerfile 构建时，什么情况下会复用缓存层？
+
+A. Dockerfile 中某条指令和之前构建完全相同
+B. 基础镜像更新时
+C. 使用 --no-cache 参数时
+D. 每次构建都会复用
+
+**正确答案**：A
+**解析**：Docker 构建镜像时会逐条执行 Dockerfile 指令，每条指令创建一个新层。如果该指令和之前构建的指令完全相同（且前面的层也相同），Docker 会复用缓存层，大幅提升构建速度。
+
+---
+
+### Q028: Docker 安全
+
+**类型**：判断题
+**概念**：`安全` → `namespaces`
+**难度**：0.6
+**前置知识**：`namespaces`, `cgroups`
+
+**题目**：
+Docker 容器是完全安全的，因为 namespaces 和 cgroups 提供了完整的隔离。
+
+**正确答案**：错误
+**解析**：虽然 namespaces 和 cgroups 提供了隔离，但容器仍然共享宿主机内核。内核漏洞可能突破容器隔离。此外，配置不当（如特权容器、挂载敏感目录）也会带来安全风险。Docker 是"安全默认"而非"完全安全"。
+
+---
+
+### Q029: 容器状态机
+
+**类型**：选择题（单选）
+**概念**：`容器状态` → `生命周期`
+**难度**：0.6
+**前置知识**：`容器`
+
+**题目**：
+Docker 容器的状态转换中，以下哪条路径是正确的？
+
+A. Created → Running → Paused → Running → Exited
+B. Created → Paused → Running → Exited
+C. Running → Exited → Running
+D. Created → Exited → Running
+
+**正确答案**：A
+**解析**：容器创建后处于 Created 可以启动到 Running，Running 可以暂停到 Paused（暂停时进程冻结），Paused 可以恢复到 Running，最后停止到 Exited。Exited 的容器不能直接回到 Running，需要重新 start。
+
+---
+
+### Q030: Go 并发在 Docker 中的应用
+
+**类型**：代码分析题
+**概念**：`Go 并发` → `goroutine`
+**难度**：0.8
+**前置知识**：`dockerd`
+
+**题目**：
+以下代码是 Docker daemon 监控容器状态的简化版本：
+
+```go
+func (daemon *Daemon) monitorContainers(ctx context.Context) {
+    for {
+        select {
+        case <-ctx.Done():
+            return
+        case event := <-daemon.events:
+            go func() {
+                daemon.handleEvent(event)
+            }()
+        }
+    }
+}
+```
+
+问题：
+1. 这里使用了什么 Go 并发模式？
+2. `go func()` 启动的 goroutine 有什么潜在问题？
+3. ctx.Done() 的作用是什么？
+
+**参考答案**：
+1. 使用了 goroutine + channel 的事件驱动模式。for-select 循环监听事件通道和上下文取消信号。
+2. 潜在问题：如果 handleEvent 执行很慢，大量事件会创建大量 goroutine。应该使用有界并发（worker pool）或 buffered channel 控制并发数。另外，event 变量在 goroutine 中捕获可能导致闭包问题（Go 1.22 之前）。
+3. ctx.Done() 用于优雅退出。当 ctx 被取消（如 daemon 关闭时），monitorContainers 循环退出，避免 goroutine 泄漏。

@@ -4,9 +4,12 @@
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
-[![Code lines](https://img.shields.io/badge/code-6300%2B%20Python-blueviolet)](.)
+[![Code lines](https://img.shields.io/badge/code-7000%2B%20Python-blueviolet)](.)
 [![Agents](https://img.shields.io/badge/agents-8-orange)](./agents)
 [![Concepts](https://img.shields.io/badge/concepts-16-ff69b4)](./docker-knowledge)
+[![Questions](https://img.shields.io/badge/questions-30-9cf)](./questions)
+[![Web UI](https://img.shields.io/badge/Web%20UI-Streamlit-FF4B4B)](./web_ui)
+[![Stars](https://img.shields.io/github/stars/gzcity/docker-learn-system?style=social)](https://github.com/gzcity/docker-learn-system)
 
 ---
 
@@ -198,16 +201,18 @@ python3 learn.py
 
 | 指标 | 数值 |
 |------|------|
-| Python 代码行数 | ~6,300 |
-| 引擎模块 | 10 |
+| Python 代码行数 | ~7,000 |
+| 引擎模块 | 11 |
 | Agent 角色 | 8 |
 | 核心概念 | 16 |
 | 常见误解 | 20 |
-| 题目 | 14 (8 种题型，5 种难度) |
+| 题目 | 30 (8 种题型，5 种难度) |
 | 教学人格 | 8 |
 | 可视化类型 | 8 |
 | 评分方法 | 5 |
 | 学习闭环 | 4 |
+| Docker 源码分类 | 15 |
+| 书籍章节 | 7 |
 | Docker 部署文件 | 7 |
 
 ---
