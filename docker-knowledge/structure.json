@@ -1,0 +1,54 @@
+{
+  "version": "1.0",
+  "description": "Docker 源码学习系统知识库层次结构",
+  "categories": [
+    {
+      "id": "basic",
+      "name": "基础概念",
+      "description": "Docker 的核心抽象和基础概念",
+      "order": 0,
+      "concepts": [
+        "容器 (Container)",
+        "镜像 (Image)",
+        "层 (Layer)",
+        "容器创建流程",
+        "容器状态机"
+      ]
+    },
+    {
+      "id": "source",
+      "name": "源码架构",
+      "description": "Docker 各核心组件的源码架构分析",
+      "order": 1,
+      "concepts": [
+        "容器运行时 (Container Runtime)",
+        "containerd",
+        "runc",
+        "shim",
+        "dockerd (Docker 守护进程)"
+      ]
+    },
+    {
+      "id": "design",
+      "name": "设计决策",
+      "description": "Docker 架构设计原理和关键决策",
+      "order": 2,
+      "concepts": [
+        "镜像拉取流程",
+        "镜像构建流程",
+        "网络模型",
+        "存储驱动",
+        "插件系统"
+      ]
+    },
+    {
+      "id": "practice",
+      "name": "实践技巧",
+      "description": "Docker 使用、调试和优化实践",
+      "order": 3,
+      "concepts": [
+        "Swarm 集群"
+      ]
+    }
+  ]
+}

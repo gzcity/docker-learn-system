@@ -1,0 +1,38 @@
+﻿# Python 依赖
+# ============================================================
+# 核心运行时
+copaw-agent>=0.1.0
+copaw-mcp>=0.1.0
+
+# 知识图谱
+neo4j>=5.0.0
+py2neo>=2021.2.3
+
+# 向量数据库
+chromadb>=0.4.0
+sentence-transformers>=2.2.0
+
+# 语义搜索
+numpy>=1.24.0
+scikit-learn>=1.3.0
+
+# 源码分析
+tree-sitter>=0.20.0  # 用于 Go 源码 AST 解析
+
+# 可视化
+diagrams>=0.23.0  # 架构图生成
+
+# Web 服务
+fastapi>=0.100.0
+uvicorn>=0.23.0
+pydantic>=2.0.0
+
+# 工具
+httpx>=0.24.0
+python-dotenv>=1.0.0
+pyyaml>=6.0
+click>=8.1.0
+
+# 进度与日志
+rich>=13.0.0
+loguru>=0.7.0

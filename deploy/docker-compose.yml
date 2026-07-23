@@ -1,0 +1,165 @@
+# ============================================================
+# Docker 源码学习系统 — Docker Compose 部署
+# ============================================================
+# 一键启动：docker compose up -d
+# 停止：     docker compose down
+# 重置：     docker compose down -v
+# ============================================================
+
+version: "3.9"
+
+x-common-env: &common-env
+  TZ: Asia/Shanghai
+  # 知识图谱连接
+  NEO4J_URI: bolt://neo4j:7687
+  NEO4J_USER: neo4j
+  NEO4J_PASSWORD: "${NEO4J_PASSWORD:-learn1234}"
+  # 向量数据库连接
+  CHROMA_HOST: chroma
+  CHROMA_PORT: 8000
+  # 工作区路径
+  WORKSPACE_DIR: /workspace
+  DOCKER_SOURCE_DIR: /docker-source
+
+services:
+  # ============================================================
+  # 1. 核心服务：学习系统主 Agent
+  # ============================================================
+  app:
+    image: "docker-learning-system:latest"
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    container_name: docker-learner
+    restart: unless-stopped
+    ports:
+      # CoPaw Agent 控制台（如果启用）
+      - "${APP_PORT:-8080}:8080"
+    environment:
+      <<: *common-env
+      # 人格预设
+      ACTIVE_PERSONA: "${ACTIVE_PERSONA:-socratic}"
+      # 日志级别
+      LOG_LEVEL: "${LOG_LEVEL:-info}"
+    volumes:
+      # 知识库、书籍、题库等持久化数据
+      - ./volumes/data:/workspace/data
+      # 每日记忆、长期记忆
+      - ./volumes/memory:/workspace/memory
+      # 用户生成的笔记
+      - ./volumes/notes:/workspace/notes
+      # 挂载 Docker 源码（供学习系统读取）
+      - "${DOCKER_SOURCE_PATH:-./volumes/docker-source}:/docker-source:ro"
+      # 配置文件
+      - ./config:/workspace/config:ro
+    depends_on:
+      neo4j:
+        condition: service_healthy
+      chroma:
+        condition: service_started
+    networks:
+      - learn-net
+    # 健康检查
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ============================================================
+  # 2. 知识图谱：Neo4j
+  # ============================================================
+  neo4j:
+    image: neo4j:5-community
+    container_name: docker-learner-neo4j
+    restart: unless-stopped
+    ports:
+      # HTTP API (Browser)
+      - "${NEO4J_HTTP_PORT:-7474}:7474"
+      # Bolt 协议
+      - "${NEO4J_BOLT_PORT:-7687}:7687"
+    environment:
+      NEO4J_AUTH: "neo4j/${NEO4J_PASSWORD:-learn1234}"
+      # 内存配置（可根据主机调整）
+      NEO4J_dbms_memory_pagecache_size: "${NEO4J_CACHE_SIZE:-512M}"
+      NEO4J_dbms_memory_heap_initial__size: "${NEO4J_HEAP_INIT:-512M}"
+      NEO4J_dbms_memory_heap_max__size: "${NEO4J_HEAP_MAX:-1G}"
+    volumes:
+      # 图谱数据持久化
+      - ./volumes/neo4j/data:/data
+      # 导入目录（用于初始化知识图谱）
+      - ./init/neo4j:/import:ro
+      # 日志
+      - ./volumes/neo4j/logs:/logs
+    healthcheck:
+      test: ["CMD", "cypher-shell", "-u", "neo4j", "-p", "${NEO4J_PASSWORD:-learn1234}", "RETURN 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - learn-net
+
+  # ============================================================
+  # 3. 向量数据库：ChromaDB
+  # ============================================================
+  chroma:
+    image: chromadb/chroma:latest
+    container_name: docker-learner-chroma
+    restart: unless-stopped
+    ports:
+      - "${CHROMA_PORT:-8000}:8000"
+    environment:
+      # 持久化路径
+      PERSIST_DIRECTORY: /chroma/chroma-data
+      ANONYMIZED_TELEMETRY: "false"
+      # 内存配置
+      CHROMA_SERVER_CORS_ALLOW_ORIGINS: '["*"]'
+    volumes:
+      # 向量数据持久化
+      - ./volumes/chroma:/chroma/chroma-data
+    networks:
+      - learn-net
+
+  # ============================================================
+  # 4. 定时任务：复习提醒 + 每日总结（可选）
+  # ============================================================
+  # cron:
+  #   image: "docker-learning-system:latest"
+  #   container_name: docker-learner-cron
+  #   restart: unless-stopped
+  #   environment:
+  #     <<: *common-env
+  #     MODE: cron
+  #   volumes:
+  #     - ./volumes/data:/workspace/data
+  #     - ./volumes/memory:/workspace/memory
+  #     - ./config:/workspace/config:ro
+  #   depends_on:
+  #     app:
+  #       condition: service_healthy
+  #   networks:
+  #     - learn-net
+  #   profiles:
+  #     - cron
+
+  # ============================================================
+  # 5. Web 仪表盘（可选）
+  # ============================================================
+  # dashboard:
+  #   image: nginx:alpine
+  #   container_name: docker-learner-dashboard
+  #   ports:
+  #     - "${DASHBOARD_PORT:-3000}:80"
+  #   volumes:
+  #     - ./volumes/dashboard:/usr/share/nginx/html:ro
+  #   networks:
+  #     - learn-net
+  #   profiles:
+  #     - dashboard
+
+networks:
+  learn-net:
+    driver: bridge
+    name: docker-learner-network

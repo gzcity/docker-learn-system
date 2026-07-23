@@ -1,0 +1,57 @@
+# ============================================================
+# Agent 配置文件
+# ============================================================
+agent:
+  name: "docker-learner"
+  version: "1.0.0"
+  
+  # 工作区
+  workspace: /workspace
+  
+  # 知识图谱
+  knowledge_graph:
+    type: neo4j
+    uri: "${NEO4J_URI:-bolt://neo4j:7687}"
+    user: "${NEO4J_USER:-neo4j}"
+    password: "${NEO4J_PASSWORD:-learn1234}"
+    database: "neo4j"
+  
+  # 向量数据库
+  vector_store:
+    type: chroma
+    host: "${CHROMA_HOST:-chroma}"
+    port: ${CHROMA_PORT:-8000}
+    collection: "docker-knowledge"
+  
+  # 记忆系统
+  memory:
+    daily_dir: /workspace/memory
+    long_term: /workspace/memory/MEMORY.md
+    max_history: 100
+  
+  # 人格预设
+  personas:
+    dir: /workspace/data/personas
+    default: "${ACTIVE_PERSONA:-socratic}"
+  
+  # 知识库
+  knowledge:
+    dir: /workspace/data/docker-knowledge
+  
+  # 题库
+  questions:
+    dir: /workspace/data/questions
+  
+  # 书籍
+  books:
+    dir: /workspace/data/books
+  
+  # Docker 源码路径
+  docker_source:
+    dir: /docker-source
+
+# 日志
+logging:
+  level: "${LOG_LEVEL:-info}"
+  format: "json"
+  output: stdout

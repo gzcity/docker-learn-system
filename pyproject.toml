@@ -1,0 +1,54 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "docker-learn-system"
+version = "1.0.0"
+description = "An AI-native, multi-agent system for learning Docker source code"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+authors = [
+    {name = "Docker Learning System Team"},
+]
+keywords = ["docker", "learning", "education", "knowledge-graph", "spaced-repetition", "multi-agent"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Education",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Education",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: System :: Systems Administration",
+]
+
+[project.optional-dependencies]
+web = ["streamlit>=1.28.0"]
+dev = ["pytest", "black", "ruff"]
+
+[project.scripts]
+docker-learn = "learn:main"
+docker-learn-web = "web_ui.app:main"
+
+[project.urls]
+Homepage = "https://github.com/yourusername/docker-learn-system"
+Documentation = "https://github.com/yourusername/docker-learn-system/blob/main/README.md"
+Repository = "https://github.com/yourusername/docker-learn-system"
+Issues = "https://github.com/yourusername/docker-learn-system/issues"
+
+[tool.setuptools]
+packages = ["engine"]
+
+[tool.setuptools.package-dir]
+engine = "engine"
+
+[tool.black]
+line-length = 100
+
+[tool.ruff]
+line-length = 100
