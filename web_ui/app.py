@@ -14,6 +14,8 @@ ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT))
 
 import streamlit as st
+import plotly.express as px
+import plotly.graph_objects as go
 from datetime import datetime
 
 # ---- 初始化引擎 ----
@@ -26,6 +28,7 @@ from engine.research_engine import research
 from engine.memory_engine import long_term_memory, user_profile, daily_summary
 from engine.persona_engine import persona_engine, learning_path
 from engine.dashboard_engine import dashboard, flow_engine, system_commands, ux
+from engine.go_ast_parser import source_analyzer, DOCKER_SOURCE_FILES
 from engine.orchestrator import process_input, INTENT_PATTERNS
 
 # ============================================================
@@ -64,7 +67,6 @@ def init_session_state():
         st.session_state.current_persona = persona_engine.current or "socratic"
         st.session_state.search_query = ""
 
-        # 添加欢迎消息
         welcome = ux.greet() if hasattr(ux, 'greet') else "欢迎来到 Docker 源码学习系统！"
         st.session_state.messages.append({
             "role": "assistant",
@@ -77,24 +79,15 @@ init_session_state()
 # ============================================================
 # 辅助函数
 # ============================================================
-
 def handle_chat_input(user_input: str):
     """处理用户输入并生成回复"""
     if not user_input.strip():
         return
-
-    # 添加用户消息
     st.session_state.messages.append({"role": "user", "content": user_input})
-
-    # 处理输入
     with st.spinner("思考中..."):
         result = process_input(user_input, st.session_state.context)
         response = result["response"]
-
-    # 添加助手回复
     st.session_state.messages.append({"role": "assistant", "content": response})
-
-    # 更新当前人格
     st.session_state.current_persona = persona_engine.current or "socratic"
 
 
@@ -130,6 +123,19 @@ def get_persona_display_name(p: str) -> str:
     return names.get(p, p)
 
 
+def render_mermaid_diagram(diagram_code: str, render_mode: str = "image"):
+    """渲染 Mermaid 图表"""
+    if render_mode == "code":
+        st.code(diagram_code, language="markdown")
+    else:
+        # 使用 mermaid.ink API
+        import base64
+        diagram_bytes = diagram_code.strip().encode("utf-8")
+        base64_string = base64.urlsafe_b64encode(diagram_bytes).decode("ascii")
+        mermaid_url = f"https://mermaid.ink/img/{base64_string}?type=png"
+        st.image(mermaid_url, use_container_width=True)
+
+
 # ============================================================
 # 侧边栏导航
 # ============================================================
@@ -143,9 +149,11 @@ with st.sidebar:
         "chat": "💬 对话",
         "dashboard": "📊 仪表盘",
         "knowledge": "📚 知识图谱",
+        "charts": "📈 图表",
         "quiz": "📝 测验",
         "mastery": "🎯 掌握度",
         "research": "🔬 深度研究",
+        "source": "🔍 源码分析",
         "books": "📖 书籍",
         "notes": "📓 笔记",
         "settings": "⚙️ 设置",
@@ -172,28 +180,22 @@ with st.sidebar:
     if selected != current:
         persona_engine.switch(selected)
         st.session_state.current_persona = selected
-        st.success(f"已切换到「{get_persona_display_name(selected)}」风格")
+        st.success(f"已切换到「{get_persona_display_name(selected)}」")
         st.rerun()
 
-    # 快速统计
     st.markdown("---")
-    st.markdown("### 📈 学习统计")
-    all_data = get_mastery_data()
-    if all_data:
-        avg = sum(d["level"] for d in all_data) / len(all_data)
-        practiced = sum(1 for d in all_data if d["attempts"] > 0)
-        mastered = sum(1 for d in all_data if d["level"] >= 0.7)
-        st.markdown(f"- **平均掌握度**: {avg:.0%}")
-        st.markdown(f"- **已练习**: {practiced}/{len(all_data)} 概念")
-        st.markdown(f"- **已掌握**: {mastered} 个概念")
 
-    # 版本信息
-    st.markdown("---")
-    st.caption("v1.0 | 6 大引擎 | 8 种人格")
+    # 学习统计
+    st.markdown("### 📊 学习统计")
+    mastery_data = get_mastery_data()
+    avg = sum(d["level"] for d in mastery_data) / len(mastery_data) if mastery_data else 0
+    st.metric("平均掌握度", f"{avg:.0%}")
+    st.metric("已学概念", sum(1 for d in mastery_data if d["attempts"] > 0))
+    st.metric("精通概念", sum(1 for d in mastery_data if d["level"] >= 0.7))
 
 
 # ============================================================
-# 页面路由
+# 路由
 # ============================================================
 page = st.session_state.page
 
@@ -203,14 +205,12 @@ page = st.session_state.page
 if page == "chat":
     st.title("💬 对话式学习")
 
-    # 显示聊天历史
     chat_container = st.container(height=500)
     with chat_container:
         for msg in st.session_state.messages:
             with st.chat_message(msg["role"]):
                 st.markdown(msg["content"])
 
-    # 输入框
     user_input = st.chat_input("输入你想学的内容...")
     if user_input:
         handle_chat_input(user_input)
@@ -233,21 +233,60 @@ elif page == "dashboard":
         st.markdown("### 📈 掌握度分布")
         all_data = get_mastery_data()
         if all_data:
-            levels = [d["level"] for d in all_data]
-            names = [d["name"] for d in all_data]
-            st.bar_chart(
-                data={"掌握度": levels},
-                use_container_width=True,
+            colors = []
+            for d in all_data:
+                if d["level"] >= 0.7:
+                    colors.append("#22c55e")
+                elif d["level"] >= 0.4:
+                    colors.append("#eab308")
+                else:
+                    colors.append("#ef4444")
+
+            fig = go.Figure(go.Bar(
+                x=[d["name"] for d in all_data],
+                y=[d["level"] for d in all_data],
+                marker_color=colors,
+                text=[f"{d['level']:.0%}" for d in all_data],
+                textposition="auto",
+            ))
+            fig.update_layout(
+                yaxis_title="掌握度",
+                yaxis_range=[0, 1],
+                height=350,
+                margin=dict(l=20, r=20, t=20, b=60),
+                xaxis_tickangle=-45,
             )
-            # 显示掌握度列表
-            for d in reversed(all_data):
-                emoji = "🟢" if d["level"] >= 0.7 else "🟡" if d["level"] >= 0.4 else "🔴"
-                st.markdown(f"{emoji} **{d['name']}**: {d['level']:.0%}")
+            st.plotly_chart(fig, use_container_width=True)
 
     with col3:
-        st.markdown("### 🔄 学习闭环")
+        st.markdown("### 🎯 阶段进度")
+        avg_level = sum(d["level"] for d in all_data) / len(all_data) if all_data else 0
+        fig_gauge = go.Figure(go.Indicator(
+            mode="gauge+number",
+            value=avg_level * 100,
+            number={"suffix": "%", "font": {"size": 36}},
+            title={"text": "平均掌握度"},
+            gauge={
+                "axis": {"range": [0, 100]},
+                "bar": {"color": "#3b82f6"},
+                "steps": [
+                    {"range": [0, 40], "color": "#fee2e2"},
+                    {"range": [40, 70], "color": "#fef9c3"},
+                    {"range": [70, 100], "color": "#dcfce7"},
+                ],
+                "threshold": {
+                    "line": {"color": "red", "width": 4},
+                    "thickness": 0.75,
+                    "value": 70,
+                },
+            },
+        ))
+        fig_gauge.update_layout(height=250, margin=dict(l=20, r=20, t=40, b=20))
+        st.plotly_chart(fig_gauge, use_container_width=True)
+
+        st.markdown("#### 选择学习模式")
         flow_type = st.radio(
-            "选择学习模式",
+            "学习模式",
             ["发现新概念", "强化薄弱点", "到期复习", "深入探究"],
             index=0,
             label_visibility="collapsed",
@@ -287,20 +326,18 @@ elif page == "dashboard":
 elif page == "knowledge":
     st.title("📚 知识图谱")
 
-    # 搜索
-    search = st.text_input("搜索概念", placeholder="输入概念名称...")
     all_concepts = kg.get_all_concepts()
+    difficulty_filter = st.select_slider(
+        "难度过滤",
+        options=[0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
+        value=0.0,
+    )
 
-    if search:
-        results = kg.search_concepts(search)
-        concepts_to_show = results if results else []
-    else:
-        concepts_to_show = all_concepts
+    concepts_to_show = [c for c in all_concepts if c.difficulty >= difficulty_filter]
+    st.markdown(f"显示 {len(concepts_to_show)}/{len(all_concepts)} 个概念")
 
-    # 概念列表
     for c in concepts_to_show:
         rec = mastery_v2.get(c.name)
-        # Display name with English
         display_name = c.name
         if c.english_name and c.english_name not in c.name:
             display_name = f"{c.name} ({c.english_name})"
@@ -310,67 +347,99 @@ elif page == "knowledge":
                 st.markdown(f"**English**: {c.english_definition}")
             if c.code_ref:
                 st.markdown(f"**Source**: `{c.code_ref}`")
-            if c.prerequisites:
-                st.markdown(f"**前置知识**: {', '.join(c.prerequisites)}")
-            if c.related:
-                st.markdown(f"**关联概念**: {', '.join(c.related)}")
+            prereqs = kg.get_prerequisites(c.name)
+            if prereqs:
+                st.markdown(f"**Prerequisites**: {', '.join(p.name for p in prereqs)}")
+            related = kg.get_related_concepts(c.name)
+            if related:
+                st.markdown(f"**Related**: {', '.join(r.name for r in related)}")
             if c.misconceptions:
                 st.markdown("**常见误解**:")
                 for mc in c.misconceptions:
-                    severity = "🔴" if mc.get("severity") == "critical" else "🟡"
-                    st.markdown(f"- {severity} {mc.get('pattern', '')}")
-                    st.markdown(f"  *纠正: {mc.get('correction', '')}*")
+                    st.markdown(f"- ❌ {mc['pattern']} → ✅ {mc['correction']}")
 
-            # 操作按钮
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                if st.button(f"💬 学习 {c.name}", key=f"learn_{c.name}"):
-                    st.session_state.messages.append({
-                        "role": "user",
-                        "content": f"讲讲 {c.name}"
-                    })
-                    handle_chat_input(f"讲讲 {c.name}")
-                    st.session_state.page = "chat"
-                    st.rerun()
-            with col2:
-                if st.button(f"📝 出题 {c.name}", key=f"quiz_{c.name}"):
-                    st.session_state.messages.append({
-                        "role": "user",
-                        "content": f"考考我 {c.name}"
-                    })
-                    handle_chat_input(f"考考我 {c.name}")
-                    st.session_state.page = "chat"
-                    st.rerun()
-            with col3:
-                if st.button(f"🔬 研究 {c.name}", key=f"research_{c.name}"):
-                    st.session_state.messages.append({
-                        "role": "user",
-                        "content": f"深入 {c.name}"
-                    })
-                    handle_chat_input(f"深入 {c.name}")
-                    st.session_state.page = "chat"
-                    st.rerun()
+# ============================================================
+# 页面: 图表可视化
+# ============================================================
+elif page == "charts":
+    st.title("📈 图表可视化")
 
-    # 可视化
-    st.markdown("---")
-    st.markdown("### 🎨 知识图谱可视化")
-    viz_types = {
-        "知识图谱总览": "knowledgegraph",
-        "架构层次": "architecture",
-        "学习路径": "learningpath",
-    }
-    viz_choice = st.selectbox("选择图表类型", list(viz_types.keys()), label_visibility="collapsed")
-    if st.button("生成图表", use_container_width=True):
-        vtype = viz_types[viz_choice]
-        if vtype == "knowledgegraph":
-            diagram = viz.knowledge_graph()
-        elif vtype == "architecture":
-            diagram = viz.architecture_diagram()
-        elif vtype == "learningpath":
-            diagram = viz.learning_path()
+    diagram_types = viz.list_diagram_types()
+    col1, col2 = st.columns([1, 2])
+
+    with col1:
+        st.markdown("### 🎨 图表类型")
+        all_concepts = kg.get_all_concepts()
+        concept_names = [c.name for c in all_concepts]
+
+        selected_diagram = st.radio(
+            "选择图表类型",
+            [d["name"] for d in diagram_types],
+        )
+        target_concept = st.selectbox("焦点概念（可选）", ["(无)"] + concept_names)
+
+        if st.button("生成图表", type="primary", use_container_width=True):
+            focus = "" if target_concept == "(无)" else target_concept
+            diagram = ""
+            if selected_diagram == "architecture":
+                diagram = viz.generate_architecture(focus)
+            elif selected_diagram == "call_chain":
+                diagram = viz.generate_call_chain(focus)
+            elif selected_diagram == "learning_path":
+                diagram = viz.generate_learning_path(focus)
+            elif selected_diagram == "knowledge_graph":
+                diagram = viz.generate_knowledge_graph()
+            elif selected_diagram == "data_flow":
+                diagram = viz.generate_data_flow(focus)
+            elif selected_diagram in ("study_progress", "heatmap"):
+                diagram = viz.generate_study_progress()
+            elif selected_diagram == "class_diagram":
+                diagram = viz.generate_class_diagram(focus)
+
+            if diagram:
+                st.session_state.current_diagram = diagram
+                st.session_state.current_diagram_type = selected_diagram
+
+    with col2:
+        st.markdown("### 📊 图表预览")
+        if "current_diagram" in st.session_state and st.session_state.current_diagram:
+            diagram = st.session_state.current_diagram
+
+            render_mode = st.radio(
+                "渲染方式",
+                ["Mermaid 代码", "mermaid.ink 图片"],
+                horizontal=True,
+                key="chart_render_mode",
+            )
+
+            render_mermaid_diagram(diagram, render_mode)
+
+            # 下载
+            col_dl1, col_dl2 = st.columns(2)
+            with col_dl1:
+                st.download_button(
+                    "📥 下载 Mermaid 源码",
+                    diagram,
+                    file_name=f"{st.session_state.get('current_diagram_type', 'chart')}.mmd",
+                    mime="text/plain",
+                    use_container_width=True,
+                )
+            with col_dl2:
+                import base64
+                base64_string = base64.urlsafe_b64encode(diagram.strip().encode("utf-8")).decode("ascii")
+                svg_url = f"https://mermaid.ink/img/{base64_string}?type=svg"
+                st.markdown(f"[🔗 打开 SVG]({svg_url})")
         else:
-            diagram = "暂不支持"
-        st.markdown(diagram)
+            st.info("点击「生成图表」开始")
+
+    # 图表说明
+    st.markdown("---")
+    st.markdown("### 📖 图表类型说明")
+    cols = st.columns(4)
+    for i, dt in enumerate(diagram_types):
+        with cols[i % 4]:
+            st.markdown(f"**{dt['name']}**")
+            st.caption(dt['desc'])
 
 # ============================================================
 # 页面: 测验
@@ -378,33 +447,41 @@ elif page == "knowledge":
 elif page == "quiz":
     st.title("📝 测验")
 
-    # 测验配置
     if not st.session_state.quiz_active:
-        st.markdown("### 开始新测验")
+        st.markdown("### 开始测验")
+        quiz_scope = st.radio(
+            "测验范围",
+            ["全部", "特定概念", "薄弱点"],
+            horizontal=True,
+        )
 
-        all_concepts = kg.get_all_concepts()
-        concept_names = [c.name for c in all_concepts]
-
-        col1, col2 = st.columns(2)
-        with col1:
-            target_concept = st.selectbox("选择概念范围", ["全部"] + concept_names)
-            difficulty = st.select_slider("难度", options=["简单", "中等", "困难", "综合"], value="综合")
-        with col2:
-            question_count = st.slider("题目数量", 1, 10, 5)
-            types = ["multiple_choice", "true_false", "fill_blank", "code_analysis"]
-            qtype = st.selectbox("题型", ["混合"] + types)
-
-        if st.button("开始答题", type="primary", use_container_width=True):
-            # 获取题目
-            if target_concept == "全部":
-                questions = quiz_manager.bank.questions
+        target_concept = None
+        if quiz_scope == "特定概念":
+            all_concepts = kg.get_all_concepts()
+            concept_names = [c.name for c in all_concepts]
+            target_concept = st.selectbox("选择概念", concept_names)
+        elif quiz_scope == "薄弱点":
+            all_data = get_mastery_data()
+            weak = [d for d in all_data if d["level"] < 0.5]
+            if weak:
+                st.markdown("薄弱点: " + ", ".join(d["name"] for d in weak[:5]))
             else:
-                questions = [q for q in quiz_manager.bank.questions if target_concept in q.concepts]
+                st.info("暂无薄弱点")
+
+        question_count = st.slider("题目数量", 3, 14, 5)
+
+        if st.button("开始", type="primary", use_container_width=True):
+            questions = quiz_manager.bank.questions
+            if quiz_scope == "特定概念" and target_concept:
+                questions = [q for q in questions if target_concept in q.concepts]
+            elif quiz_scope == "薄弱点" and weak:
+                weak_names = [d["name"] for d in weak[:5]]
+                questions = [q for q in questions if any(w in q.concepts for w in weak_names)]
 
             if not questions:
-                st.warning("该范围暂无题目，请先学习相关概念。")
+                st.warning("该范围暂无题目")
             else:
-                # 随机选择
+                import random
                 selected = random.sample(questions, min(question_count, len(questions)))
                 st.session_state.quiz_session = selected
                 st.session_state.quiz_index = 0
@@ -420,10 +497,8 @@ elif page == "quiz":
 
         if idx < len(questions):
             q = questions[idx]
-            progress_text = f"第 {idx + 1}/{len(questions)} 题"
-            st.progress((idx) / len(questions), text=progress_text)
+            st.progress(idx / len(questions), text=f"第 {idx + 1}/{len(questions)} 题")
 
-            # 题目信息
             st.markdown(f"### 题目 {idx + 1}")
             st.markdown(f"**难度**: {'⭐' * int(q.difficulty * 5 + 1)}")
             st.markdown(f"**题型**: {q.type}")
@@ -431,7 +506,6 @@ elif page == "quiz":
             st.markdown("---")
             st.markdown(q.body)
 
-            # 根据题型显示输入
             answer = None
             if q.type == "multiple_choice" and q.options:
                 answer = st.radio("选择答案", q.options, key=f"q_{idx}_radio")
@@ -442,18 +516,14 @@ elif page == "quiz":
             else:
                 answer = st.text_input("输入答案", key=f"q_{idx}_input")
 
-            # 提交按钮
             col1, col2 = st.columns([3, 1])
             with col2:
                 if st.button("提交答案", type="primary", use_container_width=True):
                     if not answer:
                         st.warning("请先输入答案")
                     else:
-                        # 评分
                         scorer = Scorer(q.type)
                         is_correct, score = scorer.score(q, answer)
-
-                        # 记录
                         st.session_state.quiz_answers.append(answer)
                         st.session_state.quiz_feedback.append({
                             "correct": is_correct,
@@ -461,69 +531,33 @@ elif page == "quiz":
                             "correct_answer": q.answer,
                             "explanation": q.explanation,
                         })
-
-                        # 显示反馈
                         if is_correct:
                             st.success(f"✅ 正确！得分: {score:.0%}")
                         else:
                             st.error(f"❌ 不正确。得分: {score:.0%}")
-                            st.info(f"正确答案: {q.answer}")
-
-                        if q.explanation:
-                            st.markdown(f"**解析**: {q.explanation}")
-
-                        # 下一题按钮
-                        if st.button("下一题 →", use_container_width=True):
-                            st.session_state.quiz_index += 1
-                            st.rerun()
+                        st.info(f"正确答案: {q.answer}\n\n解析: {q.explanation}")
+                        st.session_state.quiz_index += 1
+                        import time
+                        time.sleep(1.5)
+                        st.rerun()
 
         else:
-            # 测验完成
-            st.balloons()
-            st.markdown("## 🎉 测验完成！")
-
-            # 统计
-            feedbacks = st.session_state.quiz_feedback
-            correct_count = sum(1 for f in feedbacks if f["correct"])
-            total = len(feedbacks)
-            accuracy = correct_count / total if total > 0 else 0
+            # 测验结束
+            st.markdown("## 🎉 测验完成!")
+            feedback = st.session_state.quiz_feedback
+            correct_count = sum(1 for f in feedback if f["correct"])
+            avg_score = sum(f["score"] for f in feedback) / len(feedback) if feedback else 0
 
             col1, col2, col3 = st.columns(3)
             with col1:
-                st.metric("正确", f"{correct_count}/{total}")
+                st.metric("正确率", f"{correct_count}/{len(feedback)}")
             with col2:
-                st.metric("正确率", f"{accuracy:.0%}")
-            with col3:
-                st.metric("平均得分", f"{sum(f['score'] for f in feedbacks) / total:.0%}" if total > 0 else "0%")
+                st.metric("平均得分", f"{avg_score:.0%}")
+            with st.columns(3)[2]:
+                st.metric("题目数", str(len(feedback)))
 
-            # 详情
-            st.markdown("### 答题详情")
-            for i, (q, fb) in enumerate(zip(questions, feedbacks)):
-                emoji = "✅" if fb["correct"] else "❌"
-                with st.expander(f"{emoji} 第 {i+1} 题: {q.body[:50]}..."):
-                    st.markdown(f"**你的答案**: {st.session_state.quiz_answers[i]}")
-                    st.markdown(f"**正确答案**: {fb['correct_answer']}")
-                    st.markdown(f"**解析**: {fb['explanation']}")
-
-            # 更新掌握度
-            if st.button("更新掌握度并返回", type="primary", use_container_width=True):
-                for q, fb in zip(questions, feedbacks):
-                    for concept in q.concepts:
-                        rec = mastery_v2.get(concept)
-                        old_level = rec.level
-                        delta = 0.1 if fb["correct"] else -0.05
-                        rec.level = max(0.0, min(1.0, rec.level + delta))
-                        rec.attempts += 1
-                        if fb["correct"]:
-                            rec.correct += 1
-                        rec.last_practiced = datetime.now().strftime("%Y-%m-%d %H:%M")
-                        mastery_v2.set(concept, rec)
-                mastery_v2.save()
-                st.success("✅ 掌握度已更新！")
-
-                # 重置
+            if st.button("再来一次", use_container_width=True):
                 st.session_state.quiz_active = False
-                st.session_state.quiz_session = None
                 st.rerun()
 
 # ============================================================
@@ -535,30 +569,47 @@ elif page == "mastery":
     col1, col2 = st.columns([2, 1])
 
     with col1:
-        st.markdown("### 掌握度热力图")
+        st.markdown("### 📊 掌握度分布")
         all_data = get_mastery_data()
         if all_data:
-            # 分组
-            mastered = [d for d in all_data if d["level"] >= 0.7]
-            learning = [d for d in all_data if 0.4 <= d["level"] < 0.7]
-            new = [d for d in all_data if d["level"] < 0.4]
+            colors = []
+            for d in all_data:
+                if d["level"] >= 0.7:
+                    colors.append("#22c55e")
+                elif d["level"] >= 0.4:
+                    colors.append("#eab308")
+                else:
+                    colors.append("#ef4444")
 
-            st.markdown("#### 🟢 已掌握 (>= 70%)")
-            for d in mastered:
-                st.markdown(f"- **{d['name']}**: {d['level']:.0%} ({d['correct']}/{d['attempts']} 正确)")
+            fig = go.Figure(go.Bar(
+                x=[d["name"] for d in all_data],
+                y=[d["level"] for d in all_data],
+                marker_color=colors,
+                text=[f"{d['level']:.0%}" for d in all_data],
+                textposition="auto",
+            ))
+            fig.update_layout(
+                yaxis_title="掌握度",
+                yaxis_range=[0, 1],
+                height=300,
+                margin=dict(l=20, r=20, t=20, b=80),
+                xaxis_tickangle=-45,
+            )
+            st.plotly_chart(fig, use_container_width=True)
 
-            st.markdown("#### 🟡 学习中 (40-70%)")
-            for d in learning:
-                st.markdown(f"- **{d['name']}**: {d['level']:.0%} ({d['correct']}/{d['attempts']} 正确)")
-
-            st.markdown("#### 🔴 待学习 (< 40%)")
-            for d in new:
-                st.markdown(f"- **{d['name']}**: {d['level']:.0%} ({d['attempts']} 次练习)")
-
-            # 柱状图
-            st.markdown("### 📊 掌握度分布")
-            chart_data = {d["name"]: d["level"] for d in all_data}
-            st.bar_chart(chart_data, use_container_width=True)
+            # 散点图
+            st.markdown("### 📈 掌握度 vs 准确率")
+            fig_scatter = px.scatter(
+                x=[d["attempts"] for d in all_data],
+                y=[d["accuracy"] for d in all_data],
+                size=[d["level"] * 30 + 5 for d in all_data],
+                color=[d["level"] for d in all_data],
+                color_continuous_scale="RdYlGn",
+                hover_name=[d["name"] for d in all_data],
+                labels={"x": "练习次数", "y": "准确率", "color": "掌握度"},
+            )
+            fig_scatter.update_layout(height=300, margin=dict(l=20, r=20, t=20, b=40))
+            st.plotly_chart(fig_scatter, use_container_width=True)
 
     with col2:
         st.markdown("### 🔄 到期复习")
@@ -570,7 +621,7 @@ elif page == "mastery":
                     review_date = datetime.strptime(d["next_review"], "%Y-%m-%d")
                     if review_date <= now:
                         due.append(d)
-                except:
+                except Exception:
                     pass
 
         if due:
@@ -580,19 +631,28 @@ elif page == "mastery":
             st.info("暂无到期复习内容")
 
         st.markdown("---")
-        st.markdown("### 📈 遗忘曲线")
-        # 用 retention rate 展示
+        st.markdown("### 📈 遗忘曲线预测")
+        import math
+        days = list(range(0, 31))
+        fig_decay = go.Figure()
         for d in all_data[:5]:
-            rate = get_retention_rate(d["name"])
-            bar_width = int(rate * 100)
-            bar = "█" * (bar_width // 5) + "░" * (20 - bar_width // 5)
-            st.markdown(f"**{d['name']}**: {bar} {rate:.0%}")
-
-        # 生成 Mermaid 热力图
-        st.markdown("---")
-        if st.button("生成 Mermaid 热力图", use_container_width=True):
-            diagram = viz.heatmap()
-            st.markdown(diagram)
+            if d["attempts"] > 0:
+                retention = get_retention_rate(d["name"])
+                stability = max(1, d["attempts"] * d["level"] * 2)
+                decay_values = [retention * math.exp(-t / stability) for t in days]
+                fig_decay.add_trace(go.Scatter(
+                    x=days, y=decay_values,
+                    mode="lines", name=d["name"],
+                ))
+        fig_decay.update_layout(
+            xaxis_title="天数",
+            yaxis_title="记忆保留率",
+            yaxis_range=[0, 1],
+            height=250,
+            margin=dict(l=20, r=20, t=30, b=30),
+            legend=dict(font=dict(size=9)),
+        )
+        st.plotly_chart(fig_decay, use_container_width=True)
 
 # ============================================================
 # 页面: 深度研究
@@ -614,15 +674,11 @@ elif page == "research":
                 if report:
                     st.session_state.research_report = report
                     st.session_state.research_topic = target
-                else:
-                    st.warning("暂无该主题的研究数据")
 
-    # 显示研究报告
     if "research_report" in st.session_state and st.session_state.research_report:
         st.markdown("---")
         st.markdown(st.session_state.research_report)
 
-        # 导出
         if st.button("📥 导出为 Markdown", use_container_width=True):
             export_path = ROOT / "research" / f"{st.session_state.research_topic}-研究报告.md"
             export_path.parent.mkdir(parents=True, exist_ok=True)
@@ -632,9 +688,84 @@ elif page == "research":
     # 可视化
     st.markdown("---")
     st.markdown("### 🎨 相关可视化")
-    if st.button("生成调用链图", use_container_width=True):
-        diagram = viz.call_chain(target if 'target' in dir() else "容器运行时")
-        st.markdown(diagram)
+    viz_col1, viz_col2 = st.columns(2)
+    with viz_col1:
+        if st.button("生成架构图", use_container_width=True):
+            diagram = viz.generate_architecture(target)
+            st.session_state.research_diagram = diagram
+    with viz_col2:
+        if st.button("生成调用链图", use_container_width=True):
+            diagram = viz.generate_call_chain(target)
+            st.session_state.research_diagram = diagram
+
+    if "research_diagram" in st.session_state:
+        render_mode = st.radio(
+            "渲染方式",
+            ["Mermaid 代码", "mermaid.ink 图片"],
+            horizontal=True,
+            key="research_render_mode",
+        )
+        render_mermaid_diagram(st.session_state.research_diagram, render_mode)
+
+# ============================================================
+# 页面: 源码分析
+# ============================================================
+elif page == "source":
+    st.title("🔍 Go 源码分析")
+
+    all_concepts = kg.get_all_concepts()
+    concept_names = [c.name for c in all_concepts]
+
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        target = st.selectbox("选择要分析的概念", concept_names, key="source_concept")
+    with col2:
+        st.markdown("### &nbsp;")
+        if st.button("🔬 分析源码", type="primary", use_container_width=True):
+            with st.spinner(f"正在分析 {target} 的源码..."):
+                report = source_analyzer.generate_source_report(target)
+                st.session_state.source_report = report
+                st.session_state.source_topic = target
+
+    # 显示分析报告
+    if "source_report" in st.session_state and st.session_state.source_report:
+        st.markdown("---")
+        st.markdown(st.session_state.source_report)
+
+        if st.button("📥 导出为 Markdown", use_container_width=True):
+            export_path = ROOT / "source-analysis" / f"{st.session_state.source_topic}-源码分析.md"
+            export_path.parent.mkdir(parents=True, exist_ok=True)
+            export_path.write_text(st.session_state.source_report, encoding="utf-8")
+            st.success(f"已导出到 {export_path}")
+
+    # 缓存状态
+    st.markdown("---")
+    st.markdown("### 📦 缓存状态")
+    cache_status = source_analyzer.get_cache_status()
+    col_c1, col_c2, col_c3 = st.columns(3)
+    with col_c1:
+        st.metric("缓存文件数", cache_status["cached_files"])
+    with col_c2:
+        st.metric("缓存大小", f"{cache_status['total_size_kb']} KB")
+    with col_c3:
+        if st.button("🗑️ 清空缓存", use_container_width=True):
+            import shutil
+            cache_dir = Path(".cache/docker-source")
+            if cache_dir.exists():
+                shutil.rmtree(cache_dir)
+                st.success("缓存已清空")
+            else:
+                st.info("无缓存可清空")
+
+    # 源码分类说明
+    st.markdown("---")
+    st.markdown("### 📂 源码分类")
+    cols = st.columns(3)
+    for i, (cat, info) in enumerate(DOCKER_SOURCE_FILES.items()):
+        with cols[i % 3]:
+            with st.expander(f"{cat}: {info['description']}"):
+                for f in info["files"]:
+                    st.markdown(f"- `{f['path']}`")
 
 # ============================================================
 # 页面: 书籍
@@ -642,7 +773,6 @@ elif page == "research":
 elif page == "books":
     st.title("📖 交互式书籍")
 
-    # 书籍列表
     books = bm.list_books()
     if not books:
         st.info("暂无书籍，请先添加。")
@@ -665,70 +795,47 @@ elif page == "books":
                         st.markdown(f"## {selected_chapter}")
                         st.markdown(chapter.get("content", "（暂无内容）"))
 
-                        # 进度追踪
                         progress = bm.get_progress(selected_book)
                         st.markdown(f"**阅读进度**: {progress.get('progress', 0)}%")
 
                         if st.button("标记为已读", use_container_width=True):
-                            bm.update_progress(selected_book, ch_idx)
-                            st.success("进度已更新！")
-
-                        # 操作
-                        col1, col2 = st.columns(2)
-                        with col1:
-                            if st.button("📝 记笔记", use_container_width=True):
-                                st.session_state.messages.append({
-                                    "role": "user",
-                                    "content": f"记笔记 正在阅读《{selected_book}》- {selected_chapter}"
-                                })
-                                st.session_state.page = "chat"
-                                st.rerun()
-                        with col2:
-                            if st.button("📝 章节测验", use_container_width=True):
-                                st.session_state.messages.append({
-                                    "role": "user",
-                                    "content": f"考考我 {selected_chapter}"
-                                })
-                                st.session_state.page = "chat"
-                                st.rerun()
+                            bm.mark_chapter_read(selected_book, ch_idx)
+                            st.success("已标记为已读")
+                            st.rerun()
 
 # ============================================================
 # 页面: 笔记
 # ============================================================
 elif page == "notes":
-    st.title("📓 笔记管理")
+    st.title("📓 笔记")
 
-    col1, col2 = st.columns([2, 1])
+    st.markdown("### ✏️ 快速记笔记")
+    note_text = st.text_area("笔记内容", height=150)
+    all_concepts = kg.get_all_concepts()
+    note_concept = st.selectbox(
+        "关联概念（可选）",
+        ["(无)"] + [c.name for c in all_concepts],
+    )
 
-    with col1:
-        st.markdown("### 新建笔记")
-        note_content = st.text_area("笔记内容", placeholder="记录你的学习心得...", height=150)
-        note_concept = st.selectbox(
-            "关联概念（可选）",
-            [""] + [c.name for c in kg.get_all_concepts()],
-        )
+    if st.button("保存笔记", type="primary", use_container_width=True):
+        if note_text.strip():
+            concept = None if note_concept == "(无)" else note_concept
+            nm.add_note(note_text, concept)
+            st.success("笔记已保存")
+            st.rerun()
 
-        if st.button("保存笔记", type="primary", use_container_width=True):
-            if note_content:
-                nm.add_note(note_content, note_concept if note_concept else None)
-                st.success("笔记已保存！")
-                st.rerun()
-            else:
-                st.warning("请输入笔记内容")
+    st.markdown("---")
+    st.markdown("### 🔍 搜索笔记")
+    search = st.text_input("搜索关键词")
+    if search:
+        results = nm.search_notes(search)
+        if results:
+            st.markdown(f"找到 {len(results)} 条结果")
+            for r in results[:10]:
+                st.markdown(f"- {r['created_at'][:16]}: {r['content'][:50]}...")
+        else:
+            st.info("无匹配结果")
 
-    with col2:
-        st.markdown("### 搜索笔记")
-        search_query = st.text_input("搜索", placeholder="关键词...", label_visibility="collapsed")
-        if search_query:
-            results = nm.search_notes(search_query)
-            if results:
-                st.markdown(f"找到 {len(results)} 条结果")
-                for r in results[:10]:
-                    st.markdown(f"- {r['created_at'][:16]}: {r['content'][:50]}...")
-            else:
-                st.info("无匹配结果")
-
-    # 笔记列表
     st.markdown("---")
     st.markdown("### 所有笔记")
     all_notes = nm.list_notes()
@@ -741,7 +848,6 @@ elif page == "notes":
     else:
         st.info("暂无笔记")
 
-    # 导出
     if all_notes and st.button("📥 导出笔记为 Markdown", use_container_width=True):
         export = nm.export_notes()
         export_path = NOTES_DIR / "my-notes.md"
@@ -793,24 +899,3 @@ elif page == "settings":
     st.markdown(f"- **题库**: {len(quiz_manager.bank.questions)} 道")
     st.markdown(f"- **人格预设**: {len(persona_engine.personas)} 种")
     st.markdown(f"- **当前人格**: {get_persona_display_name(st.session_state.current_persona)}")
-
-    # 危险操作
-    st.markdown("---")
-    st.markdown("### ⚠️ 危险操作")
-    with st.expander("重置学习进度"):
-        st.warning("此操作将清除所有掌握度数据和练习记录，不可恢复！")
-        confirm = st.text_input("输入 RESET 确认重置")
-        if st.button("确认重置", type="secondary", use_container_width=True):
-            if confirm == "RESET":
-                result = system_commands.reset()
-                st.success(result)
-                st.rerun()
-            else:
-                st.error("请输入 RESET 确认")
-
-
-# ============================================================
-# 页脚
-# ============================================================
-st.markdown("---")
-st.caption("🐳 Docker 源码学习系统 | 知识图谱驱动 · 多智能体协作 · 间隔重复 · 8 种人格")

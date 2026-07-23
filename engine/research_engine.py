@@ -336,6 +336,17 @@ class ResearchEngine:
 
         return "\n".join(lines)
 
+    @staticmethod
+    def generate_source_analysis(concept_name: str) -> str:
+        """生成源码分析报告（委托给 Go AST 解析引擎）"""
+        try:
+            from .go_ast_parser import source_analyzer
+            return source_analyzer.generate_source_report(concept_name)
+        except ImportError:
+            return "Go AST 解析引擎未安装，无法进行源码分析。"
+        except Exception as e:
+            return f"源码分析出错: {str(e)}"
+
 
 # ============================================================
 # 全局实例
